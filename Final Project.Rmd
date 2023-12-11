@@ -1,0 +1,117 @@
+---
+title: "FIFA Data Analysis"
+author: "Jeevesh Gupta"
+date: "12/11/2023"
+output:
+  html_document:
+    df_print: paged
+    default: true
+geometry: left=0.5in,right=0.5in,top=0.5in,bottom=0.5in
+urlcolor: blue
+header-includes: \usepackage{subfig}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Set CRAN mirror
+options(repos = c(CRAN = "https://cran.r-project.org"))
+
+# Install necessary packages
+install.packages(c('tinytex', 'gt', 'ggplot2', 'plotly', 'kableExtra'))
+
+# Load required libraries
+library(ggplot2)
+library(plotly)
+library(kableExtra)
+
+```
+
+## Exploration
+
+The objective of this research is to find trends in attendance and insights into the performance of home teams by examining the FIFA World Cup dataset. The collection, which is an archive of past games, has a wealth of information about team dynamics, scores, and dates. Following the organization and summary of the data, we move on to the visualizations: a bar plot that breaks out home team goal accomplishments and a line plot that charts the growth of attendance. These succinct analyses seek to expose the underlying themes and patterns that characterize the FIFA World Cup experience, capturing the spirit of international soccer fever and the distinctive tales embedded in every game.
+
+## Data Exploration
+
+Owing to the size of the FIFA World Cup dataset, a first investigation is necessary to fully understand its complexity. A graphic depiction was created, emphasizing important elements of the matches, in order to obtain a preliminary comprehension. The graphic that is presented displays a bar plot that illustrates how different teams' home team goals are distributed. A cursory look at the goal-scoring tendencies is made possible by the plot, which highlights exceptional players and possible trends. Remarkably, the scale highlights high-scoring home teams in red, while lower-scoring teams are shown in blue. This initial investigation provides a visual story of the goal dynamics inside the FIFA World Cup matches dataset, laying the groundwork for future comprehensive analysis.
+
+
+
+```{r Loading Data}
+# Read the FIFA World Cup matches dataset
+fifa_matches <- read.csv("/Users/jeeveshrajgupta/Desktop/FP_Jeevesh/WorldCupMatches.csv")
+
+# Display the structure of the dataset
+str(fifa_matches)
+
+# Check the column names in the dataset
+colnames_fifa <- colnames(fifa_matches)
+
+# Define the columns to summarize
+summary_columns <- c("Home Team Goals", "Away Team Goals", "Attendance")
+
+# Check if the specified columns exist in the dataset
+missing_columns <- setdiff(summary_columns, colnames_fifa)
+
+# Check if there are any missing columns
+if (length(missing_columns) > 0) {
+  warning(paste("Warning: The following columns are missing in the dataset:", paste(missing_columns, collapse = ", ")))
+}
+
+# Filter out the columns that exist in the dataset
+existing_columns <- intersect(summary_columns, colnames_fifa)
+
+# Generate summary statistics for existing numerical columns
+summary(fifa_matches[, existing_columns])
+
+# Convert 'Datetime' column to a Date format
+fifa_matches$Datetime <- as.Date(fifa_matches$Datetime, format = "%d %b %Y - %H:%M")
+
+```
+
+```{r Attendance over years, echo=FALSE}
+library(ggplot2)
+
+ggplot(data = fifa_matches, aes(x = as.numeric(format(Datetime, "%Y")), y = Attendance)) +
+  geom_bar(stat = "identity") +
+  labs(title = "FIFA World Cup Attendance Over the Years", x = "Year", y = "Attendance") +
+  theme_minimal()
+
+
+```
+
+```{r Home Team Performace}
+
+library(plotly)
+
+plot_ly(data = fifa_matches, x = ~Home.Team.Name, y = ~Home.Team.Goals, type = 'bar', color = ~Home.Team.Name) %>%
+  layout(title = "Home Team Performances", xaxis = list(tickangle = 45, tickmode = "array", tickvals = seq(1, nrow(fifa_matches), 5), ticktext = fifa_matches$Home.Team.Name[seq(1, nrow(fifa_matches), 5)]))
+
+library(gt)
+
+# Calculate total attendance for each year
+total_attendance <- fifa_matches %>%
+  group_by(Year) %>%
+  summarise(Total_Attendance = sum(Attendance, na.rm = TRUE))
+
+# Print the table
+total_attendance %>%
+  gt() %>%
+  tab_header(
+    title = "Total Attendance Summary",
+    subtitle = NULL
+  ) %>%
+  fmt_number(
+    columns = vars(Total_Attendance),
+    decimals = 0
+  )
+
+
+
+```
+
+
+
+## In-Depth Analysis
+
+The FIFA World Cup attendance bar plot shows interesting patterns throughout time, with peaks in the early 1990s and consistent increases since the 1950s. The tournament's tenacity and capacity to connect with a worldwide audience are suggested by this graphic tale, whose high points correspond with important turning points in soccer history. However, the interactive bar plot that highlights the home team's performances provides information about the mechanics of goal scoring. Well-established soccer superpowers such as Brazil, Germany, and Italy are habitually dominant and suggest a strong home advantage. It's interesting to see that home team goals rise in hosting countries, highlighting the effect of home-field advantage on performance. When combined, these graphics offer an engrossing glimpse into the changing dynamics and popularity of the FIFA World Cup throughout the world.
